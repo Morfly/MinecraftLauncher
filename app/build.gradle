@@ -14,12 +14,13 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++11"
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
 //                , "-frtti", "-fexceptions"
 //                arguments   "-DANDROID_STL=gnustl_shared"
             }
         }
         ndk {
-//            abiFilters 'armeabi-v7a'
+//            abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
 //        packagingOptions {
 //            exclude "lib/arm64-v8a/libgnustl_shared.so"

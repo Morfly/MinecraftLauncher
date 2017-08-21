@@ -43,6 +43,7 @@ public class HTTPRequest
       return;
     }
     catch (UnsupportedEncodingException exception)
+
     {
       exception.printStackTrace();
     }
@@ -111,32 +112,32 @@ public class HTTPRequest
     if (this.mResponse.getStatus() == 2) {
       return this.mResponse;
     }
-    try
-    {
-      HttpResponse response = HTTPClientManager.getHTTPClient().execute(this.mHTTPRequest);
+    HttpResponse response = null;
+    try {
+      response = HTTPClientManager.getHTTPClient().execute(this.mHTTPRequest);
       mResponse.setResponseCode(response.getStatusLine().getStatusCode());
       HttpEntity localHttpEntity = response.getEntity();
       this.mResponse.setBody(EntityUtils.toString(localHttpEntity));
       this.mResponse.setStatus(1);
       this.mResponse.setHeaders(response.getAllHeaders());
       return this.mResponse;
-    }
-    catch (ConnectTimeoutException connectTimeoutException)
-    {
+    } catch (ConnectTimeoutException connectTimeoutException) {
       this.mResponse.setStatus(3);
       this.mHTTPRequest = null;
       return this.mResponse;
     }
-    catch (ClientProtocolException clientProtocolException)
-    {
+    catch (ClientProtocolException clientProtocolException) {
       clientProtocolException.printStackTrace();
-    }
-    catch (IOException ioException)
-    {
+    } catch (IOException ioException) {
       ioException.printStackTrace();
     }
-    return null;
+    if (response == null){
+      return new HTTPResponse();
+    }else {
+      return (HTTPResponse) response;
+    }
   }
+
   
   public void setContentType(String contentType) {
     this.mRequestContentType = contentType;

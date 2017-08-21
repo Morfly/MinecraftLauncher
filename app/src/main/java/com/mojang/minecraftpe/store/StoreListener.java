@@ -1,7 +1,6 @@
 package com.mojang.minecraftpe.store;
 
-public abstract interface StoreListener
-{
+public abstract interface StoreListener {
   /*public abstract void onPurchaseCanceled(String paramString);
   
   public abstract void onPurchaseFailed(String paramString);

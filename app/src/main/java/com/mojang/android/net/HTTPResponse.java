@@ -2,8 +2,7 @@ package com.mojang.android.net;
 
 import org.apache.http.Header;
 
-public class HTTPResponse
-{
+public class HTTPResponse {
   public static final int ABORTED = 2;
   public static final int DONE = 1;
   public static final int IN_PROGRESS = 0;

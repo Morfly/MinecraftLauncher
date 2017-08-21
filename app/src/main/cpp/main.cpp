@@ -47,7 +47,7 @@ std::string hk_Common_getGameVersionString_hook() {
 	// If the world hasn't loaded yet, print the usual version number(for the title screen)
 	// else, return a blank string so the version watermark is absent in game.
 	if (level_inst == NULL) { // Since I deleted the hook that gave Level a definition, Level will be always null
-		return "v0.14.0";
+		return "v0.14.0"/*"v1.1.4.51"*/;
 	} else {
 		return " ";
 	}

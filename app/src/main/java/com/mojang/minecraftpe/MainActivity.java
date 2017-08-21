@@ -3,21 +3,40 @@ package com.mojang.minecraftpe;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+import android.app.Activity;
+import android.content.ClipData;
+import android.content.res.AssetManager;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Environment;
+import android.os.StatFs;
 import android.os.Vibrator;
 import android.app.NativeActivity;
 import android.content.Context;
@@ -31,6 +50,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.speech.tts.TextToSpeech;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -47,14 +69,28 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 
 import org.fmod.FMOD;
+import org.tlauncher.tlauncherpe.mc.McVersion;
 
 import com.byteandahalf.genericlauncher.*; // import ALL the things
 import com.byteandahalf.genericlauncher.NativeHandler;
+import com.mcbox.pesdk.archive.entity.Options;
+import com.mcbox.pesdk.archive.util.OptionsUtil;
+import com.mcbox.pesdk.launcher.LauncherConstants;
+import com.mcbox.pesdk.mcfloat.util.LauncherUtil;
+import com.mcbox.pesdk.util.McInstallInfoUtil;
+import com.umeng.analytics.MobclickAgent;
+import com.yy.hiidostatis.api.HiidoSDK;
+import com.yy.hiidostatis.defs.obj.Property;
+import com.yy.hiidostatis.inner.BaseStatisContent;
+
+import static com.mcbox.pesdk.mcfloat.util.LauncherUtil.getPrefs;
 
 
 public class MainActivity extends NativeActivity {
 
 	public static final int UI_HOVER_BUTTON_TEST = 0;
+	List<ActivityListener> mActivityListeners = new ArrayList();
+	public static int RESULT_GOOGLEPLAY_PURCHASE = 2;
 
 	PackageInfo packageInfo;
 	ApplicationInfo appInfo;
@@ -73,9 +109,251 @@ public class MainActivity extends NativeActivity {
 	    System.loadLibrary("gnustl_shared");
     }
 
+	public void m4878a(String str,String tr, String strArr) {
+		m4877a(activity, str, strArr);
+	}
+
+	public void m4877a(Context context, String str, String... strArr) {
+		if (strArr == null || strArr.length <= 0) {
+			MobclickAgent.onEvent(context, str);
+			HiidoSDK.instance().reportTimesEvent(0, str, null);
+		} else if (strArr.length >= 2 && strArr.length % 2 == 0) {
+			HashMap hashMap = new HashMap();
+			int i = 0;
+			while (i < strArr.length) {
+				hashMap.put(strArr[i], strArr[i + 1]);
+				i += 2;
+			}
+			m4875a(context, str, null, hashMap);
+		}
+	}
+
+	public void m4875a(Context context, String str, String str2, Map<String, String> map) {
+		/*MobclickAgent.onEvent(context, str, map);
+		Property property = new Property();
+		for (String str3 : map.keySet()) {
+			property.putString(str3, (String) map.get(str3));
+		}
+		//C0894a.m4874a(context, str, str2, property)
+		HiidoSDK.instance().reportTimesEvent(0, str, str2, property);*/
+		MobclickAgent.onEvent(context, str, (Map) map);
+		Property property = new Property();
+		for (String str3 : map.keySet()) {
+			property.putString(str3, (String) map.get(str3));
+		}
+		HiidoSDK.instance().reportTimesEvent(0, str, str2, property);
+	}
+
+	public void importInGame(String str, Activity activity){
+		String st = str;
+		if (st == null) {
+			try {
+				st = "";
+			} catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+		}
+		getPrefs(1).edit().putString(LauncherConstants.PREF_KEY_SKIN_PLAYER, st).apply();
+		McVersion fromVersionString = McVersion.fromVersionString(McInstallInfoUtil.getMCVersion(activity));
+		if (fromVersionString.getMajor().intValue() >= 0 && fromVersionString.getMinor().intValue() >= 0) {
+			killMCProgress(activity);
+			File c;
+			Options options;
+			if (st == null || st.trim().length() <= 0) {
+				c = m4930c();
+				if (c.exists()) {
+					c.delete();
+				}
+				try {
+					options = OptionsUtil.getInstance().getOptions();
+					options.setGame_skintype(0);
+					options.setGame_lastcustomskin(0);
+					options.setGame_skintypefull(Options.SKIN_TYPE_Steve);
+					options.setGame_lastcustomskinnew(Options.SKIN_TYPE_Steve);
+					OptionsUtil.getInstance().writeOptions(options);
+					return;
+				} catch (Throwable throwable) {
+					throwable.printStackTrace();
+				}
+			}
+			c = new File(st);
+			if (c.exists()) {
+				try {
+					copyFile(c, m4930c());
+					options = OptionsUtil.getInstance().getOptions();
+					options.setGame_skintype(0);
+					options.setGame_lastcustomskin(0);
+					options.setGame_skintypefull(Options.SKIN_TYPE_Custom);
+					options.setGame_lastcustomskinnew(Options.SKIN_TYPE_Custom);
+					OptionsUtil.getInstance().writeOptions(options);
+				} catch (Throwable throwable) {
+					throwable.printStackTrace();
+				}
+			}
+		}
+	}
+
+	public void killMCProgress(Activity activity) {
+		if (isMcRunning(activity)) {
+			McInstallInfoUtil.killMc(activity);
+		}
+	}
+
+	public boolean isMcRunning(Activity activity){
+		try {
+			ActivityManager activityManager = (ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE);
+			if (activityManager != null) {
+				List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = activityManager.getRunningAppProcesses();
+				if (runningAppProcesses != null && runningAppProcesses.size() > 0) {
+					for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcesses) {
+						if (McInstallInfoUtil.mcPackageName.equals(runningAppProcessInfo.processName)) {
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	public void copyFile(File file, File file2) {
+		int i = 0;
+		try {
+			if (file.exists()) {
+				FileInputStream fileInputStream = new FileInputStream(file);
+				FileOutputStream fileOutputStream = new FileOutputStream(file2);
+				byte[] bArr = new byte[1444];
+				while (true) {
+					int read = fileInputStream.read(bArr);
+					if (read != -1) {
+						i += read;
+						fileOutputStream.write(bArr, 0, read);
+					} else {
+						fileInputStream.close();
+						return;
+					}
+				}
+			}
+		} catch (Exception e) {
+			//println("Coping file error!");
+			e.printStackTrace();
+		}
+
+	}
+
+	public File m4930c() {
+		return new File("file://"+Environment.getExternalStorageDirectory(), "games/com.mojang/minecraftpe/custom.png");
+	}
+
+	public void m4876a(Context context, String str, String  str2, boolean z) {
+		//if (!f2943b.booleanValue()) {
+		String str3 = "";
+		str3 = "";
+		if (str.contains("/")) {
+			String substring = str.substring(0, str.indexOf("/"));
+			str3 = str.substring(str.indexOf("/") + 1);
+			HashMap hashMap = new HashMap();
+			hashMap.put("parm1", str3);
+			hashMap.put("parm2", str2);
+			MobclickAgent.onEvent(context, substring, hashMap);
+			Property property = new Property();
+			property.putString("parm1", str3);
+			property.putString("parm2", str2);
+			HiidoSDK.instance().reportTimesEvent(0, substring, null, property);
+                /*if (z && f2942a != null) {
+                    f2942a.m1902a(C0575m(str, str).m1843c(str2).mo1835a())
+                    return
+                }*/
+			return;
+		}
+		//C0894a.m4881b(context, str)
+		MobclickAgent.onEvent(context, str);
+		HiidoSDK.instance().reportTimesEvent(0, str, null);
+		//}
+	}
+
+	public Set<String> getEnabledScripts(){
+		String string = getPrefs(1).getString("enabledScripts", "");
+		return string.equals("") ? new HashSet() : new HashSet(Arrays.asList(string.split(";")));
+	}
+
+	public void startMC(Activity activity, Boolean z, Boolean z2) {
+		try {
+			//if (checkMcpeInstalled(activity)) {
+			m4876a(activity, "start_mc_btn", "",false);
+			McVersion fromVersionString = McVersion.fromVersionString(McInstallInfoUtil.getMCVersion(activity));
+			if (fromVersionString.getMajor().intValue() > 0 || fromVersionString.getMinor().intValue() >= 12) {
+				int size = getEnabledScripts().size();
+				boolean z3 = getPrefs(0).getBoolean(LauncherConstants.PREF_KEY_SKIN_ENABLE, false);
+				boolean z4 = getPrefs(0).getBoolean(LauncherConstants.PREF_KEY_TEXTURE_ENABLE, false);
+				boolean floatingWindowStatue = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("setFloatingWindowStatue", true);
+				boolean pluginEnable = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("pluginEnable", false);
+				if (fromVersionString.getMajor().intValue() <= 0 && fromVersionString.getMinor().intValue() <= 9) {
+					startMcWithCleanMem(activity, 1);
+					return;
+				} else if (fromVersionString.getMajor().intValue() <= 0 && fromVersionString.getMinor().intValue() == 12 && fromVersionString.getBeta().intValue() > 0 && fromVersionString.getBeta().intValue() < 6) {
+					startMcWithCleanMem(activity, 1);
+					return;
+				} else if (floatingWindowStatue) {
+					startMcWithCleanMem(activity, 2);
+					return;
+				} else if (z3 || z4 || pluginEnable || size != 0) {
+					startMcWithCleanMem(activity, 2);
+					if (z3 && size > 0) {
+						MobclickAgent.onEvent(activity, "start_mc_skin_js");
+						HiidoSDK.instance().reportTimesEvent(0, "start_mc_skin_js", null);
+						return;
+					} else if (z3) {
+						MobclickAgent.onEvent(activity, "start_mc_skin");
+						HiidoSDK.instance().reportTimesEvent(0, "start_mc_skin", null);
+						return;
+					} else if (size > 0) {
+						MobclickAgent.onEvent(activity, "start_mc_js");
+						HiidoSDK.instance().reportTimesEvent(0, "start_mc_js", null);
+						return;
+					} else {
+						return;
+					}
+				} else {
+					startMcWithCleanMem(activity, 1);
+					return;
+				}
+			}
+			startMcWithCleanMem(activity, 1);
+			//}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void startMcWithCleanMem(Activity activity, int num) {
+        /*if (if (2 === num) cleanTextureAndPlugin(activity) else true) {
+            PrefUtil.setWorldLocation(activity, "")
+            if (LauncherUtil.getPrefs(0)!!.getBoolean("isEnableMemClean", true)) {
+                val intent = Intent(activity, MemoryCleanActivity::class.java)
+                intent.putExtra("startType", num)
+                activity.startActivity(intent)
+            } else if (num == 1) {*/
+		//startPlug(activity)
+		//activity.startActivity(activity.getPackageManager().getLaunchIntentForPackage(McInstallInfoUtil.mcPackageName));
+            /*} else {
+                startPlug(activity)
+            }
+        }*/
+	}
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		activity = this;
+		LauncherUtil.init(activity);
+		PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean(LauncherConstants.PREF_KEY_SKIN_ENABLE, true).apply();
+		m4878a("apply_skin", BaseStatisContent.FROM, "我的皮肤列表应用皮肤");
+		importInGame(Environment.getExternalStorageDirectory().toString()+ "/games/com.mojang/skin_packs/custom.png", activity);
+		m4878a("start_mcpe", BaseStatisContent.FROM, "我的皮肤列表开启游戏");
+		startMC(activity, true, false);
 
 		try {
 			packageInfo = getPackageManager().getPackageInfo(
@@ -98,7 +376,6 @@ public class MainActivity extends NativeActivity {
 			System.load(libraryDir+"/libfmod.so");
 			Log.d("GenericLauncher","Load minecraftpe !");
 
-
 			System.load(libraryLocation);
 
 			FMOD.init(this);
@@ -116,7 +393,6 @@ public class MainActivity extends NativeActivity {
 			super.onCreate(savedInstanceState);
 
 			try {
-
 				NativeHandler.init();
 
 			} catch(Exception e) {
@@ -139,6 +415,153 @@ public class MainActivity extends NativeActivity {
 			finish();
 		}
 
+	}
+
+	public void stopTextToSpeech() {
+		/*if (this.textToSpeechManager != null) {
+			this.textToSpeechManager.stop();
+		}*/
+	}
+
+	public boolean isTextToSpeechInProgress() {
+		/*if (this.textToSpeechManager != null) {
+			return this.textToSpeechManager.isSpeaking();
+		}*/
+		return false;
+	}
+
+	public void trackPurchaseEvent(String paramString1, String paramString2, String paramString3, String paramString4, String paramString5) {
+		/*HashMap localHashMap = new HashMap();
+		localHashMap.put("player_session_id", paramString5);
+		localHashMap.put("client_id", paramString4);
+		localHashMap.put("af_revenue", paramString3);
+		localHashMap.put("af_content_type", paramString2);
+		localHashMap.put("af_content_id", paramString1);
+		AppsFlyerLib.getInstance().trackEvent(getApplicationContext(), "af_purchase", localHashMap);*/
+	}
+
+	void setFileDialogCallback(long paramLong) {
+		//is.mFileDialogCallback = paramLong;
+	}
+
+	public String createDeviceID() {
+		SharedPreferences localSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		Object localObject2 = localSharedPreferences.getString("snooperId", "");
+		Object localObject1 = localObject2;
+		if (((String)localObject2).isEmpty()) {
+			localObject1 = UUID.randomUUID().toString().replaceAll("-", "");
+			localObject2 = localSharedPreferences.edit();
+			((SharedPreferences.Editor)localObject2).putString("snooperId", (String)localObject1);
+			((SharedPreferences.Editor)localObject2).commit();
+		}
+		return (String)localObject1;
+	}
+
+	public void requestStoragePermission(int paramInt) {
+		/*this.mLastPermissionRequestReason = paramInt;
+		ActivityCompat.requestPermissions(this, new String[] { "android.permission.WRITE_EXTERNAL_STORAGE" }, 1);*/
+	}
+
+	public void setTextToSpeechEnabled(boolean paramBoolean) {
+		/*if ((!paramBoolean) || (this.textToSpeechManager == null)) {}
+		try {
+			this.textToSpeechManager = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+				public void onInit(int paramAnonymousInt) {}
+			});
+			return;
+		}
+		catch (Exception localException) {}
+		this.textToSpeechManager = null;
+		return;*/
+	}
+
+	public boolean hasWriteExternalStoragePermission() {
+		/*if (ContextCompat.checkSelfPermission(this, "android.permission.WRITE_EXTERNAL_STORAGE") == 0) {}
+		for (boolean bool = true;; bool = false) {
+			mHasStoragePermission = bool;
+			return mHasStoragePermission;
+		}*/
+		return true;
+	}
+
+	public void updateLocalization(final String paramString1, final String paramString2) {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				Locale localLocale = new Locale(paramString1, paramString2);
+				Locale.setDefault(localLocale);
+				Configuration localConfiguration = new Configuration();
+				localConfiguration.locale = localLocale;
+				MainActivity.this.getResources().updateConfiguration(localConfiguration, MainActivity.this.getResources().getDisplayMetrics());
+			}
+		});
+	}
+
+	public int getCursorPosition() {
+		/*if ((this.mHiddenTextInputDialog == null) || (this.textInputWidget == null)) {
+			return -1;
+		}
+		return this.textInputWidget.getSelectionStart();*/
+		return 1;
+	}
+
+	public String[] getIPAddresses() {
+		/*localArrayList = new ArrayList();
+		try {
+			System.setProperty("java.net.preferIPv4Stack", "true");
+			Enumeration localEnumeration = NetworkInterface.getNetworkInterfaces();
+			while (localEnumeration.hasMoreElements()) {
+				Object localObject = (NetworkInterface)localEnumeration.nextElement();
+				if ((!((NetworkInterface)localObject).isLoopback()) && (((NetworkInterface)localObject).isUp())) {
+					localObject = ((NetworkInterface)localObject).getInterfaceAddresses().iterator();
+					while (((Iterator)localObject).hasNext()) {
+						InterfaceAddress localInterfaceAddress = (InterfaceAddress)((Iterator)localObject).next();
+						InetAddress localInetAddress = localInterfaceAddress.getAddress();
+						if ((localInetAddress != null) && (!localInetAddress.isAnyLocalAddress()) && (!localInetAddress.isMulticastAddress()) && (!localInetAddress.isLinkLocalAddress())) {
+							localArrayList.add(localInterfaceAddress.getAddress().toString().substring(1));
+						}
+					}
+				}
+			}
+			return (String[])localArrayList.toArray(new String[localArrayList.size()]);
+		}
+		catch (Exception localException) {}*/
+		return new String[0];
+	}
+
+	public long getUsedMemory() {
+		return Debug.getNativeHeapAllocatedSize();
+	}
+
+	public long getAvailableMemory() {
+		ActivityManager localActivityManager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+		ActivityManager.MemoryInfo localMemoryInfo = new ActivityManager.MemoryInfo();
+		localActivityManager.getMemoryInfo(localMemoryInfo);
+		return localMemoryInfo.availMem;
+	}
+
+	public void setClipboard(String paramString) {
+		/*paramString = ClipData.newPlainText("MCPE-Clipdata", paramString);
+		this.clipboardManager.setPrimaryClip(paramString);*/
+	}
+
+	public Intent createAndroidLaunchIntent() {
+		Context localContext = getApplicationContext();
+		return localContext.getPackageManager().getLaunchIntentForPackage(localContext.getPackageName());
+	}
+
+	public long calculateAvailableDiskFreeSpace(String paramString) {
+		/*paramString = new StatFs(paramString);
+		if (Build.VERSION.SDK_INT >= 18) {
+			return paramString.getAvailableBytes();
+		}
+		return paramString.getAvailableBlocks() * paramString.getBlockSize();*/
+		return 0;
+	}
+
+	public void startTextToSpeech(String paramString) {
+		/*if (this.textToSpeechManager != null) {
+			this.textToSpeechManager.speak(paramString, 0, null);
+		}*/
 	}
 
 	public String getExternalStoragePath() {
@@ -363,6 +786,50 @@ public class MainActivity extends NativeActivity {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	public int[] getImageData(String paramString){
+		/*Bitmap localBitmap = BitmapFactory.decodeFile(paramString);
+		Object localObject = localBitmap;
+		if (localBitmap == null) {
+			localObject = getApplicationContext();
+		}
+		try {
+			localObject = ((Context)localObject).getAssets();
+			if (localObject != null) {
+				try {
+					localObject = ((AssetManager)localObject).open(paramString);
+					localObject = BitmapFactory.decodeStream((InputStream)localObject);
+					int i = ((Bitmap)localObject).getWidth();
+					int j = ((Bitmap)localObject).getHeight();
+					paramString = new int[i * j + 2];
+					paramString[0] = i;
+					paramString[1] = j;
+					((Bitmap)localObject).getPixels(paramString, 2, i, 0, 0, i, j);
+					return paramString;
+				}catch (IOException localIOException) {
+					System.err.println("getImageData: Could not open image " + paramString);
+					return null;
+				}
+			}
+			System.err.println("getAssets returned null: Could not open image " + paramString);
+		}catch (NullPointerException localNullPointerException) {
+			System.err.println("getAssets threw NPE: Could not open image " + paramString);
+			return null;
+		}
+		return null;*/
+		return  new int[]{};
+	}
+
+	public String getFormattedDateString(int paramInt) {
+		/*DateFormat localDateFormat = this.DateFormat;
+		localDateFormat = this.DateFormat;
+		return DateFormat.getDateInstance(3, this.initialUserLocale).format(new Date(paramInt * 1000L));*/
+		return "";
+	}
+
+	public String getFileTimestamp(int paramInt) {
+		return new SimpleDateFormat("__EEE__yyyy_MM_dd__HH_mm_ss'.txt'").format(new Date(paramInt * 1000L));
 	}
 
 	public int[] getImageData(String name, boolean wtf) {
@@ -611,6 +1078,10 @@ public class MainActivity extends NativeActivity {
 				Gravity.LEFT | Gravity.TOP, -10000, 0);
 		hiddenTextView.requestFocus();
 		showKeyboardView();
+	}
+
+	public void addListener(ActivityListener paramActivityListener) {
+		this.mActivityListeners.add(paramActivityListener);
 	}
 
 	protected void onDestroy() {
