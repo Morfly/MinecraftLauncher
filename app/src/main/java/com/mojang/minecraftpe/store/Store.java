@@ -1,8 +1,8 @@
 package com.mojang.minecraftpe.store;
 
-/*import android.util.Log;
+import android.util.Log;
 
-public class Store
+/*public class Store
 {
     private StoreListener listener;
 

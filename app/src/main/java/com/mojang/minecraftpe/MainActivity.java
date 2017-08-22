@@ -109,116 +109,6 @@ public class MainActivity extends NativeActivity {
 	    System.loadLibrary("gnustl_shared");
     }
 
-	public void m4878a(String str,String tr, String strArr) {
-		m4877a(activity, str, strArr);
-	}
-
-	public void m4877a(Context context, String str, String... strArr) {
-		if (strArr == null || strArr.length <= 0) {
-			MobclickAgent.onEvent(context, str);
-			HiidoSDK.instance().reportTimesEvent(0, str, null);
-		} else if (strArr.length >= 2 && strArr.length % 2 == 0) {
-			HashMap hashMap = new HashMap();
-			int i = 0;
-			while (i < strArr.length) {
-				hashMap.put(strArr[i], strArr[i + 1]);
-				i += 2;
-			}
-			m4875a(context, str, null, hashMap);
-		}
-	}
-
-	public void m4875a(Context context, String str, String str2, Map<String, String> map) {
-		/*MobclickAgent.onEvent(context, str, map);
-		Property property = new Property();
-		for (String str3 : map.keySet()) {
-			property.putString(str3, (String) map.get(str3));
-		}
-		//C0894a.m4874a(context, str, str2, property)
-		HiidoSDK.instance().reportTimesEvent(0, str, str2, property);*/
-		MobclickAgent.onEvent(context, str, (Map) map);
-		Property property = new Property();
-		for (String str3 : map.keySet()) {
-			property.putString(str3, (String) map.get(str3));
-		}
-		HiidoSDK.instance().reportTimesEvent(0, str, str2, property);
-	}
-
-	public void importInGame(String str, Activity activity){
-		String st = str;
-		if (st == null) {
-			try {
-				st = "";
-			} catch (Exception e) {
-				e.printStackTrace();
-				return;
-			}
-		}
-		getPrefs(1).edit().putString(LauncherConstants.PREF_KEY_SKIN_PLAYER, st).apply();
-		McVersion fromVersionString = McVersion.fromVersionString(McInstallInfoUtil.getMCVersion(activity));
-		if (fromVersionString.getMajor().intValue() >= 0 && fromVersionString.getMinor().intValue() >= 0) {
-			killMCProgress(activity);
-			File c;
-			Options options;
-			if (st == null || st.trim().length() <= 0) {
-				c = m4930c();
-				if (c.exists()) {
-					c.delete();
-				}
-				try {
-					options = OptionsUtil.getInstance().getOptions();
-					options.setGame_skintype(0);
-					options.setGame_lastcustomskin(0);
-					options.setGame_skintypefull(Options.SKIN_TYPE_Steve);
-					options.setGame_lastcustomskinnew(Options.SKIN_TYPE_Steve);
-					OptionsUtil.getInstance().writeOptions(options);
-					return;
-				} catch (Throwable throwable) {
-					throwable.printStackTrace();
-				}
-			}
-			c = new File(st);
-			if (c.exists()) {
-				try {
-					copyFile(c, m4930c());
-					options = OptionsUtil.getInstance().getOptions();
-					options.setGame_skintype(0);
-					options.setGame_lastcustomskin(0);
-					options.setGame_skintypefull(Options.SKIN_TYPE_Custom);
-					options.setGame_lastcustomskinnew(Options.SKIN_TYPE_Custom);
-					OptionsUtil.getInstance().writeOptions(options);
-				} catch (Throwable throwable) {
-					throwable.printStackTrace();
-				}
-			}
-		}
-	}
-
-	public void killMCProgress(Activity activity) {
-		if (isMcRunning(activity)) {
-			McInstallInfoUtil.killMc(activity);
-		}
-	}
-
-	public boolean isMcRunning(Activity activity){
-		try {
-			ActivityManager activityManager = (ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE);
-			if (activityManager != null) {
-				List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = activityManager.getRunningAppProcesses();
-				if (runningAppProcesses != null && runningAppProcesses.size() > 0) {
-					for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcesses) {
-						if (McInstallInfoUtil.mcPackageName.equals(runningAppProcessInfo.processName)) {
-							return true;
-						}
-					}
-				}
-			}
-			return false;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
 	public void copyFile(File file, File file2) {
 		int i = 0;
 		try {
@@ -244,116 +134,16 @@ public class MainActivity extends NativeActivity {
 
 	}
 
-	public File m4930c() {
-		return new File("file://"+Environment.getExternalStorageDirectory(), "games/com.mojang/minecraftpe/custom.png");
-	}
-
-	public void m4876a(Context context, String str, String  str2, boolean z) {
-		//if (!f2943b.booleanValue()) {
-		String str3 = "";
-		str3 = "";
-		if (str.contains("/")) {
-			String substring = str.substring(0, str.indexOf("/"));
-			str3 = str.substring(str.indexOf("/") + 1);
-			HashMap hashMap = new HashMap();
-			hashMap.put("parm1", str3);
-			hashMap.put("parm2", str2);
-			MobclickAgent.onEvent(context, substring, hashMap);
-			Property property = new Property();
-			property.putString("parm1", str3);
-			property.putString("parm2", str2);
-			HiidoSDK.instance().reportTimesEvent(0, substring, null, property);
-                /*if (z && f2942a != null) {
-                    f2942a.m1902a(C0575m(str, str).m1843c(str2).mo1835a())
-                    return
-                }*/
-			return;
-		}
-		//C0894a.m4881b(context, str)
-		MobclickAgent.onEvent(context, str);
-		HiidoSDK.instance().reportTimesEvent(0, str, null);
-		//}
-	}
-
 	public Set<String> getEnabledScripts(){
 		String string = getPrefs(1).getString("enabledScripts", "");
 		return string.equals("") ? new HashSet() : new HashSet(Arrays.asList(string.split(";")));
-	}
-
-	public void startMC(Activity activity, Boolean z, Boolean z2) {
-		try {
-			//if (checkMcpeInstalled(activity)) {
-			m4876a(activity, "start_mc_btn", "",false);
-			McVersion fromVersionString = McVersion.fromVersionString(McInstallInfoUtil.getMCVersion(activity));
-			if (fromVersionString.getMajor().intValue() > 0 || fromVersionString.getMinor().intValue() >= 12) {
-				int size = getEnabledScripts().size();
-				boolean z3 = getPrefs(0).getBoolean(LauncherConstants.PREF_KEY_SKIN_ENABLE, false);
-				boolean z4 = getPrefs(0).getBoolean(LauncherConstants.PREF_KEY_TEXTURE_ENABLE, false);
-				boolean floatingWindowStatue = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("setFloatingWindowStatue", true);
-				boolean pluginEnable = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("pluginEnable", false);
-				if (fromVersionString.getMajor().intValue() <= 0 && fromVersionString.getMinor().intValue() <= 9) {
-					startMcWithCleanMem(activity, 1);
-					return;
-				} else if (fromVersionString.getMajor().intValue() <= 0 && fromVersionString.getMinor().intValue() == 12 && fromVersionString.getBeta().intValue() > 0 && fromVersionString.getBeta().intValue() < 6) {
-					startMcWithCleanMem(activity, 1);
-					return;
-				} else if (floatingWindowStatue) {
-					startMcWithCleanMem(activity, 2);
-					return;
-				} else if (z3 || z4 || pluginEnable || size != 0) {
-					startMcWithCleanMem(activity, 2);
-					if (z3 && size > 0) {
-						MobclickAgent.onEvent(activity, "start_mc_skin_js");
-						HiidoSDK.instance().reportTimesEvent(0, "start_mc_skin_js", null);
-						return;
-					} else if (z3) {
-						MobclickAgent.onEvent(activity, "start_mc_skin");
-						HiidoSDK.instance().reportTimesEvent(0, "start_mc_skin", null);
-						return;
-					} else if (size > 0) {
-						MobclickAgent.onEvent(activity, "start_mc_js");
-						HiidoSDK.instance().reportTimesEvent(0, "start_mc_js", null);
-						return;
-					} else {
-						return;
-					}
-				} else {
-					startMcWithCleanMem(activity, 1);
-					return;
-				}
-			}
-			startMcWithCleanMem(activity, 1);
-			//}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void startMcWithCleanMem(Activity activity, int num) {
-        /*if (if (2 === num) cleanTextureAndPlugin(activity) else true) {
-            PrefUtil.setWorldLocation(activity, "")
-            if (LauncherUtil.getPrefs(0)!!.getBoolean("isEnableMemClean", true)) {
-                val intent = Intent(activity, MemoryCleanActivity::class.java)
-                intent.putExtra("startType", num)
-                activity.startActivity(intent)
-            } else if (num == 1) {*/
-		//startPlug(activity)
-		//activity.startActivity(activity.getPackageManager().getLaunchIntentForPackage(McInstallInfoUtil.mcPackageName));
-            /*} else {
-                startPlug(activity)
-            }
-        }*/
 	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		activity = this;
 		LauncherUtil.init(activity);
-		PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean(LauncherConstants.PREF_KEY_SKIN_ENABLE, true).apply();
-		m4878a("apply_skin", BaseStatisContent.FROM, "我的皮肤列表应用皮肤");
-		importInGame(Environment.getExternalStorageDirectory().toString()+ "/games/com.mojang/skin_packs/custom.png", activity);
-		m4878a("start_mcpe", BaseStatisContent.FROM, "我的皮肤列表开启游戏");
-		startMC(activity, true, false);
+		SkinUtil.setSkinAndStartApp(activity);
 
 		try {
 			packageInfo = getPackageManager().getPackageInfo(
